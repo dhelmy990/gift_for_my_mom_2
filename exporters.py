@@ -79,6 +79,11 @@ def _logo_mime_type(logo_bytes: bytes) -> str:
     return "image/png"
 
 
+def _logo_aspect_ratio(logo_bytes: bytes) -> tuple[float, float]:
+    with Image.open(BytesIO(logo_bytes)) as image:
+        return (float(image.width), float(image.height))
+
+
 def embed_logo_in_svg(
     svg_text: str,
     logo_bytes: bytes | None,
@@ -92,21 +97,29 @@ def embed_logo_in_svg(
         return svg_text
 
     view_width, view_height = _svg_viewbox_size(svg_text)
-    logo_size = min(view_width, view_height) * (logo_percent / 100)
+    logo_max_size = min(view_width, view_height) * (logo_percent / 100)
+    source_width, source_height = _logo_aspect_ratio(logo_bytes)
+    if source_width >= source_height:
+        logo_width = logo_max_size
+        logo_height = logo_max_size * (source_height / source_width)
+    else:
+        logo_height = logo_max_size
+        logo_width = logo_max_size * (source_width / source_height)
     padding_units = min(view_width, view_height) * (padding_px / max(size_px, 1))
-    backing_size = logo_size + (padding_units * 2)
-    x = (view_width - backing_size) / 2
-    y = (view_height - backing_size) / 2
-    radius = backing_size / 8 if backing_shape == "rounded" else 0
+    backing_width = logo_width + (padding_units * 2)
+    backing_height = logo_height + (padding_units * 2)
+    x = (view_width - backing_width) / 2
+    y = (view_height - backing_height) / 2
+    radius = min(backing_width, backing_height) / 8 if backing_shape == "rounded" else 0
     encoded = base64.b64encode(logo_bytes).decode("ascii")
     mime_type = _logo_mime_type(logo_bytes)
     safe_background = escape(background)
     overlay = (
-        f'<rect x="{x:.3f}" y="{y:.3f}" width="{backing_size:.3f}" '
-        f'height="{backing_size:.3f}" rx="{radius:.3f}" ry="{radius:.3f}" '
+        f'<rect x="{x:.3f}" y="{y:.3f}" width="{backing_width:.3f}" '
+        f'height="{backing_height:.3f}" rx="{radius:.3f}" ry="{radius:.3f}" '
         f'fill="{safe_background}" />'
         f'<image x="{x + padding_units:.3f}" y="{y + padding_units:.3f}" '
-        f'width="{logo_size:.3f}" height="{logo_size:.3f}" '
+        f'width="{logo_width:.3f}" height="{logo_height:.3f}" '
         f'href="data:{mime_type};base64,{encoded}" />'
     )
     if "</svg>" in svg_text:

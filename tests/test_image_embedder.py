@@ -45,3 +45,25 @@ def test_embed_center_image_supports_rounded_backing():
     result = embed_center_image(qr, logo, 20, 8, "rounded", "#ffffff")
     assert result.size == (400, 400)
     assert result.mode == "RGBA"
+
+
+def test_embed_center_image_preserves_wide_logo_aspect_ratio():
+    qr = Image.new("RGB", (400, 400), "#ffffff")
+    logo = Image.new("RGBA", (200, 100), "#ff0000")
+    result = embed_center_image(qr, logo, 20, 0, "square", "#ffffff")
+
+    assert result.getpixel((160, 200))[:3] == (255, 0, 0)
+    assert result.getpixel((239, 200))[:3] == (255, 0, 0)
+    assert result.getpixel((200, 180))[:3] == (255, 0, 0)
+    assert result.getpixel((200, 160))[:3] == (255, 255, 255)
+
+
+def test_embed_center_image_preserves_tall_logo_aspect_ratio():
+    qr = Image.new("RGB", (400, 400), "#ffffff")
+    logo = Image.new("RGBA", (100, 200), "#0000ff")
+    result = embed_center_image(qr, logo, 20, 0, "square", "#ffffff")
+
+    assert result.getpixel((200, 160))[:3] == (0, 0, 255)
+    assert result.getpixel((200, 239))[:3] == (0, 0, 255)
+    assert result.getpixel((180, 200))[:3] == (0, 0, 255)
+    assert result.getpixel((160, 200))[:3] == (255, 255, 255)

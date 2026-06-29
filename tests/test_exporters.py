@@ -40,6 +40,13 @@ def make_webp_logo_bytes():
     return buffer.getvalue()
 
 
+def make_rect_logo_bytes(size):
+    logo = Image.new("RGBA", size, "#ff0000")
+    buffer = BytesIO()
+    logo.save(buffer, format="PNG")
+    return buffer.getvalue()
+
+
 def parse_overlay_geometry(svg_text):
     root = ET.fromstring(svg_text)
     rect = next(element for element in root.iter() if element.tag.endswith("rect"))
@@ -120,6 +127,34 @@ def test_embed_logo_in_svg_scales_padding_using_non_default_output_size_ratio():
     assert float(image["y"]) == 40.0
     assert float(image["width"]) == 20.0
     assert float(image["height"]) == 20.0
+
+
+def test_embed_logo_in_svg_preserves_wide_logo_aspect_ratio():
+    svg = '<svg viewBox="0 0 100 100"><path d="M0 0h10v10z" /></svg>'
+    result = embed_logo_in_svg(svg, make_rect_logo_bytes((200, 100)), 20, 0, "square", "#ffffff", 1024)
+
+    rect, image = parse_overlay_geometry(result)
+
+    assert float(image["width"]) == 20.0
+    assert float(image["height"]) == 10.0
+    assert float(rect["width"]) == 20.0
+    assert float(rect["height"]) == 10.0
+    assert float(image["x"]) == 40.0
+    assert float(image["y"]) == 45.0
+
+
+def test_embed_logo_in_svg_preserves_tall_logo_aspect_ratio():
+    svg = '<svg viewBox="0 0 100 100"><path d="M0 0h10v10z" /></svg>'
+    result = embed_logo_in_svg(svg, make_rect_logo_bytes((100, 200)), 20, 0, "square", "#ffffff", 1024)
+
+    rect, image = parse_overlay_geometry(result)
+
+    assert float(image["width"]) == 10.0
+    assert float(image["height"]) == 20.0
+    assert float(rect["width"]) == 10.0
+    assert float(rect["height"]) == 20.0
+    assert float(image["x"]) == 45.0
+    assert float(image["y"]) == 40.0
 
 
 def test_export_svg_embeds_logo_via_public_api():

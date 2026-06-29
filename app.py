@@ -27,7 +27,7 @@ def main() -> None:
         background = st.color_picker("Background", "#ffffff")
         size_px = st.slider("QR size", min_value=256, max_value=2048, value=1024, step=128)
         uploaded_file = st.file_uploader("Center image", type=["png", "jpg", "jpeg", "webp"])
-        logo_percent = st.slider("Logo size", min_value=5, max_value=40, value=20, step=1)
+        logo_percent = st.slider("Logo max size", min_value=5, max_value=40, value=20, step=1)
         padding_px = st.slider("Logo padding", min_value=0, max_value=64, value=12, step=2)
         backing_shape = st.radio("Logo backing", ["square", "rounded"], horizontal=True)
 

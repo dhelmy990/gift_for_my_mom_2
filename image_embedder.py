@@ -25,25 +25,33 @@ def embed_center_image(
         return result
 
     qr_width, qr_height = result.size
-    logo_size = max(1, int(qr_width * (logo_percent / 100)))
+    logo_max_size = max(1, int(qr_width * (logo_percent / 100)))
+    source_width, source_height = logo_image.size
+    if source_width >= source_height:
+        logo_width = logo_max_size
+        logo_height = max(1, int(logo_max_size * (source_height / source_width)))
+    else:
+        logo_height = logo_max_size
+        logo_width = max(1, int(logo_max_size * (source_width / source_height)))
     resampling = getattr(Image.Resampling, "LANCZOS", Image.LANCZOS)
-    logo = logo_image.convert("RGBA").resize((logo_size, logo_size), resampling)
+    logo = logo_image.convert("RGBA").resize((logo_width, logo_height), resampling)
 
-    backing_size = logo_size + (padding_px * 2)
-    backing = Image.new("RGBA", (backing_size, backing_size), (0, 0, 0, 0))
-    mask = Image.new("L", (backing_size, backing_size), 0)
+    backing_width = logo_width + (padding_px * 2)
+    backing_height = logo_height + (padding_px * 2)
+    backing = Image.new("RGBA", (backing_width, backing_height), (0, 0, 0, 0))
+    mask = Image.new("L", (backing_width, backing_height), 0)
     draw = ImageDraw.Draw(mask)
     if backing_shape == "rounded":
-        radius = max(4, backing_size // 8)
-        draw.rounded_rectangle((0, 0, backing_size, backing_size), radius=radius, fill=255)
+        radius = max(4, min(backing_width, backing_height) // 8)
+        draw.rounded_rectangle((0, 0, backing_width, backing_height), radius=radius, fill=255)
     else:
-        draw.rectangle((0, 0, backing_size, backing_size), fill=255)
+        draw.rectangle((0, 0, backing_width, backing_height), fill=255)
 
-    fill = Image.new("RGBA", (backing_size, backing_size), background)
+    fill = Image.new("RGBA", (backing_width, backing_height), background)
     backing.paste(fill, (0, 0), mask)
     backing.alpha_composite(logo, (padding_px, padding_px))
 
-    x = (qr_width - backing_size) // 2
-    y = (qr_height - backing_size) // 2
+    x = (qr_width - backing_width) // 2
+    y = (qr_height - backing_height) // 2
     result.alpha_composite(backing, (x, y))
     return result
