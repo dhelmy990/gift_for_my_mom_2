@@ -71,13 +71,15 @@ def embed_logo_in_svg(
     padding_px: int,
     backing_shape: str,
     background: str,
+    size_px: int,
 ) -> str:
     if logo_bytes is None:
         return svg_text
 
     view_width, view_height = _svg_viewbox_size(svg_text)
     logo_size = min(view_width, view_height) * (logo_percent / 100)
-    backing_size = logo_size + (padding_px * 2)
+    padding_units = min(view_width, view_height) * (padding_px / max(size_px, 1))
+    backing_size = logo_size + (padding_units * 2)
     x = (view_width - backing_size) / 2
     y = (view_height - backing_size) / 2
     radius = backing_size / 8 if backing_shape == "rounded" else 0
@@ -88,7 +90,7 @@ def embed_logo_in_svg(
         f'<rect x="{x:.3f}" y="{y:.3f}" width="{backing_size:.3f}" '
         f'height="{backing_size:.3f}" rx="{radius:.3f}" ry="{radius:.3f}" '
         f'fill="{safe_background}" />'
-        f'<image x="{x + padding_px:.3f}" y="{y + padding_px:.3f}" '
+        f'<image x="{x + padding_units:.3f}" y="{y + padding_units:.3f}" '
         f'width="{logo_size:.3f}" height="{logo_size:.3f}" '
         f'href="data:{mime_type};base64,{encoded}" />'
     )
@@ -104,6 +106,7 @@ def export_svg(
     padding_px: int,
     backing_shape: str,
     background: str,
+    size_px: int,
 ) -> bytes:
     return embed_logo_in_svg(
         svg_text,
@@ -112,4 +115,5 @@ def export_svg(
         padding_px,
         backing_shape,
         background,
+        size_px,
     ).encode("utf-8")

@@ -47,9 +47,13 @@ def main() -> None:
     logo_image = None
     logo_bytes = None
     if uploaded_file is not None:
-        logo_bytes = uploaded_file.getvalue()
         try:
-            validate_upload_size(len(logo_bytes))
+            upload_size = getattr(uploaded_file, "size", None)
+            if upload_size is not None:
+                validate_upload_size(upload_size)
+            logo_bytes = uploaded_file.getvalue()
+            if upload_size is None:
+                validate_upload_size(len(logo_bytes))
             logo_image = load_uploaded_image(logo_bytes)
         except ValueError as exc:
             st.error(str(exc))
@@ -80,7 +84,15 @@ def main() -> None:
             "SVG": (
                 "qr-code.svg",
                 "image/svg+xml",
-                lambda: export_svg(svg_text, logo_bytes, logo_percent, padding_px, backing_shape, background),
+                lambda: export_svg(
+                    svg_text,
+                    logo_bytes,
+                    logo_percent,
+                    padding_px,
+                    backing_shape,
+                    background,
+                    size_px,
+                ),
             ),
             "PDF": ("qr-code.pdf", "application/pdf", lambda: export_pdf(final_image)),
             "JPG": ("qr-code.jpg", "image/jpeg", lambda: export_jpg(final_image, background)),

@@ -7,15 +7,18 @@ def normalize_url(raw_url: str) -> str:
     stripped = raw_url.strip()
     if not stripped:
         return ""
-    parsed = urlparse(stripped)
-    if parsed.scheme:
+    if "://" in stripped:
         return stripped
     return f"https://{stripped}"
 
 
 def is_valid_url(url: str) -> bool:
     parsed = urlparse(url)
-    return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
+    if parsed.scheme not in {"http", "https"}:
+        return False
+    if not parsed.hostname:
+        return False
+    return all(not character.isspace() and character.isprintable() for character in url)
 
 
 def validate_upload_size(size_bytes: int) -> None:

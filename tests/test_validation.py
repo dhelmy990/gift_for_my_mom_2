@@ -13,6 +13,10 @@ def test_normalize_url_adds_https_to_bare_domain():
     assert normalize_url("example.com") == "https://example.com"
 
 
+def test_normalize_url_adds_https_to_bare_domain_with_port_and_path():
+    assert normalize_url("example.com:8443/path") == "https://example.com:8443/path"
+
+
 def test_normalize_url_preserves_existing_scheme_and_strips_spaces():
     assert normalize_url("  http://example.com/path  ") == "http://example.com/path"
 
@@ -29,7 +33,10 @@ def test_is_valid_url_accepts_http_urls(url):
     assert is_valid_url(url)
 
 
-@pytest.mark.parametrize("url", ["", "not a url", "ftp://example.com", "https://"])
+@pytest.mark.parametrize(
+    "url",
+    ["", "not a url", "ftp://example.com", "https://", "https://exa mple.com"],
+)
 def test_is_valid_url_rejects_invalid_or_unsupported_urls(url):
     assert not is_valid_url(url)
 
