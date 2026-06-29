@@ -54,6 +54,16 @@ def _svg_viewbox_size(svg_text: str) -> tuple[float, float]:
     return (parts[2], parts[3])
 
 
+def _logo_mime_type(logo_bytes: bytes) -> str:
+    if logo_bytes.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if logo_bytes.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if logo_bytes.startswith(b"RIFF") and logo_bytes[8:12] == b"WEBP":
+        return "image/webp"
+    return "image/png"
+
+
 def embed_logo_in_svg(
     svg_text: str,
     logo_bytes: bytes | None,
@@ -72,6 +82,7 @@ def embed_logo_in_svg(
     y = (view_height - backing_size) / 2
     radius = backing_size / 8 if backing_shape == "rounded" else 0
     encoded = base64.b64encode(logo_bytes).decode("ascii")
+    mime_type = _logo_mime_type(logo_bytes)
     safe_background = escape(background)
     overlay = (
         f'<rect x="{x:.3f}" y="{y:.3f}" width="{backing_size:.3f}" '
@@ -79,7 +90,7 @@ def embed_logo_in_svg(
         f'fill="{safe_background}" />'
         f'<image x="{x + padding_px:.3f}" y="{y + padding_px:.3f}" '
         f'width="{logo_size:.3f}" height="{logo_size:.3f}" '
-        f'href="data:image/png;base64,{encoded}" />'
+        f'href="data:{mime_type};base64,{encoded}" />'
     )
     if "</svg>" in svg_text:
         return svg_text.replace("</svg>", f"{overlay}</svg>", 1)

@@ -23,6 +23,13 @@ def make_logo_bytes():
     return buffer.getvalue()
 
 
+def make_jpeg_logo_bytes():
+    logo = Image.new("RGB", (32, 32), "#ff0000")
+    buffer = BytesIO()
+    logo.save(buffer, format="JPEG", quality=95)
+    return buffer.getvalue()
+
+
 def test_export_png_returns_png_bytes():
     assert export_png(make_image()).startswith(b"\x89PNG")
 
@@ -52,3 +59,17 @@ def test_embed_logo_in_svg_adds_base64_image_and_backing():
     assert "data:image/png;base64," in result
     assert "<image" in result
     assert "<rect" in result
+
+
+def test_embed_logo_in_svg_uses_jpeg_mime_for_jpeg_bytes():
+    svg = '<svg viewBox="0 0 100 100"><path d="M0 0h10v10z" /></svg>'
+    result = embed_logo_in_svg(svg, make_jpeg_logo_bytes(), 20, 4, "rounded", "#ffffff")
+    assert "data:image/jpeg;base64," in result
+
+
+def test_export_svg_embeds_logo_via_public_api():
+    svg = '<svg viewBox="0 0 100 100"><path d="M0 0h10v10z" /></svg>'
+    result = export_svg(svg, make_jpeg_logo_bytes(), 20, 4, "rounded", "#ffffff")
+    text = result.decode("utf-8")
+    assert "<image" in text
+    assert "data:image/jpeg;base64," in text
