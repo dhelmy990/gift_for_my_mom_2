@@ -10,6 +10,16 @@ from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
 
 
+def _svg_length_value(svg_text: str, attribute: str) -> float | None:
+    match = re.search(rf"""{attribute}=["']([^"']+)["']""", svg_text)
+    if not match:
+        return None
+    number_match = re.match(r"""[-+]?(?:\d+(?:\.\d*)?|\.\d+)""", match.group(1).strip())
+    if not number_match:
+        return None
+    return float(number_match.group(0))
+
+
 def _flatten_to_rgb(image: Image.Image, background: str) -> Image.Image:
     base = Image.new("RGBA", image.size, background)
     base.alpha_composite(image.convert("RGBA"))
@@ -46,12 +56,17 @@ def export_pdf(image: Image.Image) -> bytes:
 
 def _svg_viewbox_size(svg_text: str) -> tuple[float, float]:
     match = re.search(r"""viewBox=["']([^"']+)["']""", svg_text)
-    if not match:
-        return (100.0, 100.0)
-    parts = [float(part) for part in match.group(1).replace(",", " ").split()]
-    if len(parts) != 4:
-        return (100.0, 100.0)
-    return (parts[2], parts[3])
+    if match:
+        parts = [float(part) for part in match.group(1).replace(",", " ").split()]
+        if len(parts) == 4:
+            return (parts[2], parts[3])
+
+    width = _svg_length_value(svg_text, "width")
+    height = _svg_length_value(svg_text, "height")
+    if width is not None and height is not None:
+        return (width, height)
+
+    return (100.0, 100.0)
 
 
 def _logo_mime_type(logo_bytes: bytes) -> str:

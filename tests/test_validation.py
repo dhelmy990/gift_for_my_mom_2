@@ -35,7 +35,16 @@ def test_is_valid_url_accepts_http_urls(url):
 
 @pytest.mark.parametrize(
     "url",
-    ["", "not a url", "ftp://example.com", "https://", "https://exa mple.com"],
+    [
+        "",
+        "not a url",
+        "ftp://example.com",
+        "https://",
+        "https://exa mple.com",
+        "https://[::1",
+        "https://example.com:bad",
+        "https://example.com:99999",
+    ],
 )
 def test_is_valid_url_rejects_invalid_or_unsupported_urls(url):
     assert not is_valid_url(url)

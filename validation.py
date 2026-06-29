@@ -13,10 +13,14 @@ def normalize_url(raw_url: str) -> str:
 
 
 def is_valid_url(url: str) -> bool:
-    parsed = urlparse(url)
-    if parsed.scheme not in {"http", "https"}:
-        return False
-    if not parsed.hostname:
+    try:
+        parsed = urlparse(url)
+        if parsed.scheme not in {"http", "https"}:
+            return False
+        if not parsed.hostname:
+            return False
+        parsed.port
+    except ValueError:
         return False
     return all(not character.isspace() and character.isprintable() for character in url)
 

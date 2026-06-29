@@ -1,6 +1,7 @@
 from io import BytesIO
 import xml.etree.ElementTree as ET
 
+import pytest
 from PIL import Image
 
 from exporters import (
@@ -11,6 +12,7 @@ from exporters import (
     export_svg,
     export_webp,
 )
+from qr_generator import create_qr, qr_to_svg_text
 
 
 def make_image():
@@ -126,3 +128,35 @@ def test_export_svg_embeds_logo_via_public_api():
     text = result.decode("utf-8")
     assert "<image" in text
     assert "data:image/jpeg;base64," in text
+
+
+def test_embed_logo_in_real_segno_svg_without_viewbox_uses_width_height_viewport():
+    svg = qr_to_svg_text(create_qr("https://example.com"), "#000000", "#ffffff")
+    result = embed_logo_in_svg(svg, make_logo_bytes(), 20, 12, "rounded", "#ffffff", 1024)
+
+    root = ET.fromstring(result)
+    rect, image = parse_overlay_geometry(result)
+    viewport_width = float(root.attrib["width"])
+    viewport_height = float(root.attrib["height"])
+
+    rect_x = float(rect["x"])
+    rect_y = float(rect["y"])
+    rect_width = float(rect["width"])
+    rect_height = float(rect["height"])
+    image_x = float(image["x"])
+    image_y = float(image["y"])
+    image_width = float(image["width"])
+    image_height = float(image["height"])
+
+    assert rect_x >= 0
+    assert rect_y >= 0
+    assert rect_x + rect_width <= viewport_width
+    assert rect_y + rect_height <= viewport_height
+    assert image_x >= 0
+    assert image_y >= 0
+    assert image_x + image_width <= viewport_width
+    assert image_y + image_height <= viewport_height
+    assert rect_x + (rect_width / 2) == pytest.approx(viewport_width / 2, abs=0.001)
+    assert rect_y + (rect_height / 2) == pytest.approx(viewport_height / 2, abs=0.001)
+    assert image_x + (image_width / 2) == pytest.approx(viewport_width / 2, abs=0.001)
+    assert image_y + (image_height / 2) == pytest.approx(viewport_height / 2, abs=0.001)
